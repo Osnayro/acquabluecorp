@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  /* Navy color scale (maps to bg-navy-950, text-navy-900, etc.) */
+  --color-navy-700: #1a2f55;
+  --color-navy-800: #12213d;
+  --color-navy-900: #0b1528;
+  --color-navy-950: #070d18;
+  /* Cyan overrides */
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #00d2ff;
+  --color-cyan-500: #00a3e0;
+  --color-cyan-600: #0082b8;
+}
