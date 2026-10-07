@@ -1,268 +1,267 @@
 
-Actúa  como un ingeniero frontend senior especializado en sitios corporativos
-estáticos con Tailwind CSS v4, accesibilidad, SEO técnico y despliegue en
-Netlify + hosting propio (cPanel/Apache).
+Actúa como ingeniero frontend senior especializado en rendimiento web,
+imágenes responsive y despliegue estático (Tailwind v4, HTML estático, JS
+vanilla). El proyecto es AcQuaBlue Corporate Site.
 
-Vas a ejecutar un LOOP de corrección y mejora sobre mi proyecto AcQuaBlue.
-Debes trabajar UNA TAREA POR ITERACIÓN. En cada iteración:
-  1. Explica en 2 líneas qué harás y por qué.
-  2. Aplica el cambio mínimo necesario (no refactorices de más).
-  3. Ejecuta la PRUEBA definida para esa tarea (con comandos si tienes acceso).
-  4. Si la prueba falla → corrige y reintenta. Máximo 3 intentos.
-  5. Si tras 3 intentos falla → DETENTE, reporta el error exacto y pídeme ayuda.
-  6. Si pasa → marca ✅ y avanza a la siguiente tarea.
-  7. Reporta en este formato exacto:
-     "Iteración N/M — Tarea: <nombre> → Cambio: <1-2 líneas> →
-      Archivos: <lista> → Prueba: <cómo se probó> →
-      Resultado: ✅/❌ → Siguiente: <tarea N+1>"
+CONTEXTO
+- Ya se aplicó una fase previa: build.js genera dist/, netlify.toml creado,
+  BOM eliminado, encoding de main.js corregido, bugs de JS arreglados,
+  honeypot en formularios, prefers-reduced-motion, disclaimer de marcas.
+- ESTA FASE se centra en: localizar imágenes externas, optimizarlas con sharp,
+  servir todo desde /assets/img/, y aplicar mejoras de rendimiento, SEO y
+  accesibilidad que quedaron pendientes.
+- No tengo terminal a mano: si necesitas ejecutar comandos, hazlo tú y
+  muéstrame el resultado. Si no puedes ejecutar, dime exactamente qué
+  debo ejecutar yo y qué resultado esperar.
 
-NO avances si la prueba de la tarea actual falla.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTEXTO DEL PROYECTO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Nombre: acquablue-corporate-site
-- Stack: HTML estático + Tailwind CSS v4 (compilado) + JS vanilla
-- Build: `npm run build` → ejecuta `build:css` (Tailwind) y `build:copy` (build.js → /dist)
-- Hosting final: cPanel/Apache (public_html)
-- Hosting de pruebas: GitHub Pages (funciona) y Netlify (falla)
-- Estructura raíz:
-  /assets  /css  /js  /src
-  build.js  generate-assets.js  index.html  package.json
-  robots.txt  sitemap.xml  tailwind.config.js  .htaccess
-- Deploy: dist/ debe contener index.html + css/ + js/ + assets/ + robots.txt + sitemap.xml
-- No tengo terminal a mano: prioriza cambios verificables por inspección de archivos.
-  Si necesitas ejecutar algo, hazlo tú y muéstrame el resultado.
+REGLAS DEL LOOP
+- Una tarea por iteración.
+- Planifica → aplica → prueba → verifica → reporta.
+- NO avances si la prueba falla. Máx. 3 intentos por tarea.
+- Si falla 3 veces → DETENTE y pídeme ayuda.
+- Reporta en este formato:
+  "Iteración N/M — Tarea: X → Cambio: ... → Archivos: ... →
+   Prueba: ... → Resultado: ✅/❌ → Siguiente: Y"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BLOQUE 1 — CONFIGURACIÓN Y BUILD
+BLOQUE A — LOCALIZAR IMÁGENES EXTERNAS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TAREA 1.1 — package.json sin BOM + scripts de build completos
-Cambio: reemplazar el bloque "scripts" por:
-  "build:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --minify",
-  "watch:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --watch",
-  "build:copy": "node build.js",
-  "build": "npm run build:css && npm run build:copy",
-  "generate-assets": "node generate-assets.js"
-Eliminar el BOM (\uFEFF) al inicio del archivo.
-Prueba: `node -e "console.log(JSON.parse(require('fs').readFileSync('package.json','utf8')).name)"`
-→ debe imprimir "acquablue-corporate-site".
+TAREA A1 — Inventario de imágenes externas
+Cambio: ninguna, solo análisis. Buscar en index.html todas las URLs que
+empiecen por "https://images.unsplash.com" y también "https://" en <img> y
+en <picture>. Listar con número y propósito:
+  - hero-bg (fondo hero, LCP)
+  - p1-ro, p2-uv, p3-pumps, p4-plc, p5-chem, p6-lab (product cards)
+  - cs1, cs2, cs3 (case studies)
+  - og-image (meta)
+Reporta cuántas hay, en qué líneas, y el nombre que le darás a cada una
+cuando la guardes como asset local.
 
-TAREA 1.2 — Crear build.js en la raíz
-Cambio: crear build.js con Node puro que:
-  - borre dist/ si existe,
-  - cree dist/,
-  - copie: index.html, css/, js/, assets/, robots.txt, sitemap.xml,
-  - imprima resumen de copiados/omitidos.
-Prueba: `node build.js` → dist/ debe contener los 6 items.
-Verifica con `ls dist`.
-
-TAREA 1.3 — Crear netlify.toml
-Cambio: crear netlify.toml con:
-  [build]
-    command = "npm run build"
-    publish = "dist"
-  [build.environment]
-    NODE_VERSION = "20"
-  Headers de cache para /assets/*, /css/*, /js/*
-  Headers de seguridad: X-Frame-Options, X-Content-Type-Options,
-  Referrer-Policy, Permissions-Policy
-  Bloque [[redirects]] SPA comentado (mi web es multipágina, no SPA).
-Prueba: `git check-ignore netlify.toml` no debe devolver nada (no ignorado).
+TAREA A2 — Crear carpeta assets/img/
+Cambio: crear assets/img/ si no existe.
+Prueba: `ls assets/img` no da error.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BLOQUE 2 — BUGS CRÍTICOS DE ENCODING
+BLOQUE B — SCRIPT DE IMÁGENES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TAREA 2.1 — Eliminar BOM de TODOS los archivos
-Cambio: revisar package.json, main.js, index.html, build.js, generate-assets.js,
-netlify.toml, tailwind.config.js, src/input.css y eliminar cualquier \uFEFF inicial.
-Prueba: buscar en cada archivo el byte EF BB BF al inicio → no debe haber.
+TAREA B1 — Crear generate-images.js
+Cambio: crear generate-images.js en la raíz con Node + sharp que:
+  1. Defina IMAGES = [{ name, url, widths: [400, 800, 1200, 1920] }, ...]
+     para las 11 imágenes identificadas en A1 (hero + 6 cards + 3 cases
+     + og).
+     Para og, widths = [1200] y formato png además de webp/jpg.
+  2. Descargue cada URL con fetch (Node 18+).
+  3. Con sharp, para cada width genere:
+       assets/img/<name>-<width>.webp   (calidad 80)
+       assets/img/<name>-<width>.jpg    (calidad 82)
+  4. Para og-image: genere assets/og-image.png en 1200x630 recortado.
+  5. Imprima un log por imagen: nombre, tamaños generados, peso final.
+  6. Si una URL falla, la salte y avise, sin abortar el resto.
+Prueba: `node generate-images.js` → assets/img/ contiene, por cada imagen,
+8 archivos (4 WebP + 4 JPG) y assets/og-image.png existe.
+Reporta el peso total de assets/img/.
 
-TAREA 2.2 — Corregir encoding corrupto en main.js
-Síntomas actuales en main.js:
-  "â€¢"  → debe ser "•"
-  "Â¿"   → debe ser "¿"
-  "Ã³"   → debe ser "ó"
-  "Ã¡"   → debe ser "á"
-  "Ã©"   → debe ser "é"
-  "Ã­"   → debe ser "í"
-  "Ãº"   → debe ser "ú"
-  "Ã±"   → debe ser "ñ"
-  "ðŸ‘‹" → debe ser "👋"
-  "ðŸ§ª" → debe ser "🧪"
-  "ðŸ’§" → debe ser "💧"
-  "ðŸ“Š" → debe ser "📊"
-  "ðŸ”¬" → debe ser "🔬"
-  "ðŸ”¥" → debe ser "🔥"
-  "ðŸ’”" → debe ser "💰"
-  "ðŸ“ " → debe ser "📍"
-  "ðŸ›¡" → debe ser "🛡"
-  "ðŸš¢" → debe ser "🚢"
-  "ðŸ“©" → debe ser "📩"
-  "ðŸ’¬" → debe ser "💬"
-  "ðŸ’¡" → debe ser "💡"
-  "ðŸ–¥" → debe ser "🖥"
-  "â„¢"  → debe ser "™"
-  "Âµm"  → debe ser "µm"
-  "Â®"   → debe ser "®"
-  "â€"" → debe ser "—"
-Además, guardar main.js como UTF-8 SIN BOM.
-Prueba: buscar "Ã" y "â€" en main.js → 0 resultados.
+TAREA B2 — Añadir script a package.json
+Cambio: añadir en scripts:
+  "generate-images": "node generate-images.js",
+  "generate-assets": "node generate-images.js && node generate-assets.js"
+Prueba: `npm run generate-images` corre sin errores.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BLOQUE 3 — BUGS DE JAVASCRIPT EN main.js
+BLOQUE C — SUSTITUIR IMÁGENES EN index.html
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TAREA 3.1 — localStorage en try/catch
-Cambio: envolver `let currentLang = localStorage.getItem('acquablue_lang') || 'EN';`
-en try/catch con fallback 'EN'.
-Prueba: en DevTools, `Object.defineProperty(window,'localStorage',{get(){throw new Error()}})`
-y recargar → el sitio debe funcionar igual.
+TAREA C1 — Hero con <picture> responsive
+Cambio: reemplazar la <img> del hero por:
+  <picture>
+    <source type="image/webp"
+      srcset="assets/img/hero-bg-400.webp 400w,
+              assets/img/hero-bg-800.webp 800w,
+              assets/img/hero-bg-1200.webp 1200w,
+              assets/img/hero-bg-1920.webp 1920w"
+      sizes="100vw">
+    <img src="assets/img/hero-bg-1200.jpg"
+      alt="Industrial Technology and Fluid Automation background"
+      class="absolute inset-0 w-full h-full object-cover object-center opacity-20 pointer-events-none"
+      width="1920" height="1080"
+      loading="eager" fetchpriority="high" decoding="async">
+  </picture>
+Prueba: DevTools → Network → la imagen viene de /assets/img/, no de Unsplash.
+Lighthouse no marca "properly size images" en el hero.
 
-TAREA 3.2 — Evitar duplicar listener de keydown al abrir modales
-Cambio: en openModal(), antes de `document.addEventListener('keydown', handleModalKeydown);`
-añadir `document.removeEventListener('keydown', handleModalKeydown);`
-Prueba: abrir/cerrar un modal 5 veces; el listener debe existir solo 1 vez.
+TAREA C2 — Product cards con <picture>
+Cambio: para p1-ro, p2-uv, p3-pumps, p4-plc, p5-chem, p6-lab, sustituir <img>
+por <picture> con:
+  - srcset WebP en 400w y 800w
+  - fallback JPG en 800w
+  - sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+  - loading="lazy" decoding="async"
+  - width="800" height="480" (ajusta según tu diseño real)
+Prueba: 0 requests a Unsplash en Network. Ninguna imagen rota.
 
-TAREA 3.3 — Evitar disparar dispatchLeadEmail múltiples veces
-Cambio: en generateGroundedAIResponse, cuando se detecte email/teléfono,
-solo llamar a dispatchLeadEmail si `chatState.stage !== 'CONFIRMED'`.
-Prueba: enviar 3 mensajes con email → 1 sola llamada a Formspree en Network.
+TAREA C3 — Case studies con <picture>
+Cambio: mismo tratamiento para cs1, cs2, cs3.
+Prueba: idem C2.
 
-TAREA 3.4 — Limitar chatState.history a 50 entradas
-Cambio: en appendChatMessage, tras push, si history.length > 50 hacer shift().
-Prueba: 60 mensajes → history.length === 50.
+TAREA C4 — Open Graph y Twitter actualizados
+Cambio: en <head>:
+  <meta property="og:image" content="https://acquabluecorp.com/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:image" content="https://acquabluecorp.com/assets/og-image.png">
+Prueba: pegar la URL en https://www.opengraph.xyz → preview correcta.
 
-TAREA 3.5 — Fallback en contadores
-Cambio: `const target = parseFloat(el.dataset.target || 0);` en TODOS los usos.
-Prueba: quitar data-target a un contador → no debe mostrar NaN.
-
-TAREA 3.6 — i18n del botón "Sending..." en formularios
-Cambio: en los finally de handleFormSubmit y handleModalForm reemplazar
-`|| 'Send'` por `|| i18n[currentLang]['form.btnSend']`.
-Prueba: en ES, simular error de red → el botón vuelve al texto en español.
-
-TAREA 3.7 — aria-label del input del chat según idioma
-Cambio: en switchLanguage, actualizar aria-label del #chat-input:
-  EN → "Message for AI Assistant"
-  ES → "Mensaje para el Asistente IA"
-Prueba: cambiar idioma → aria-label cambia.
-
-TAREA 3.8 — i18n del placeholder del chat
-Cambio: añadir clave "chat.placeholder" en EN y ES al diccionario i18n
-y aplicarla al input en switchLanguage y en la carga inicial.
-Prueba: cambiar idioma → el placeholder cambia.
-
-TAREA 3.9 — rel="noopener noreferrer" en todos los target="_blank"
-Cambio: grep target="_blank" en index.html y main.js, añadir noreferrer
-donde falte.
-Prueba: todos los target="_blank" tienen rel con noopener y noreferrer.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BLOQUE 4 — MEJORAS EN index.html
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TAREA 4.1 — Honeypot anti-spam en los 2 formularios
-Cambio: en el form de contacto (#contact-form) y en el del modal de cotización,
-añadir input oculto:
-  <input type="text" name="website" tabindex="-1" autocomplete="off"
-         class="hp-field" aria-hidden="true">
-Añadir en src/input.css (o en un <style>):
-  .hp-field { position:absolute; left:-9999px; opacity:0; pointer-events:none; }
-En main.js, al inicio de handleFormSubmit y handleModalForm:
-  const hp = form.querySelector('[name="website"]');
-  if (hp && hp.value) { return; }
-Prueba: rellenar honeypot manualmente → el envío se bloquea.
-
-TAREA 4.2 — Migrar onclick inline a data-* + addEventListener
-Cambio: reemplazar onclick="openModal('quoteModal')" por
-data-open-modal="quoteModal" y añadir listener en main.js.
-Ídem para onsubmit, onclick="toggleAccordion(...)", etc.
-Prueba: cada botón abre su modal igual que antes. 0 onclick en index.html.
-
-TAREA 4.3 — Añadir defer a <script src="js/main.js">
-Cambio: <script src="js/main.js" defer></script>
-Prueba: el sitio funciona igual; Lighthouse Performance no baja.
-
-TAREA 4.4 — Disclaimer de marcas registradas en el footer
-Cambio: añadir en el footer, antes del cierre:
-  <p class="text-xs text-slate-500 mt-4">
-    All trademarks (DuPont™, Pentair™, Atlantic UV®, Aquafine®, Goulds®,
-    Milton Roy®, Allen-Bradley®, Rockwell, Hach®, NSF®) are property of
-    their respective owners and are used for identification purposes only.
-  </p>
-Prueba: buscar "trademarks" en dist/index.html → aparece 1 vez.
+TAREA C5 — Verificar que no queda ninguna URL de Unsplash
+Cambio: buscar "unsplash" en index.html, main.js, tailwind.config.js.
+Prueba: 0 coincidencias (excepto en generate-images.js si decides dejarlo
+como referencia).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BLOQUE 5 — CSS
+BLOQUE D — build.js y dist
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TAREA 5.1 — prefers-reduced-motion en src/input.css
-Cambio: añadir al final de src/input.css:
-  @media (prefers-reduced-motion: reduce) {
-    .scroll-reveal, .animate-fade-in, .animate-pulse, .animate-ping,
-    .animate-bounce {
-      opacity: 1 !important;
-      transform: none !important;
-      animation: none !important;
-      transition: none !important;
-    }
+TAREA D1 — Verificar que build.js copia assets/img/
+Cambio: si build.js copia assets/ completo, ya está. Si no, asegurarse.
+Prueba: `npm run build && ls dist/assets/img` → muestra todas las imágenes.
+
+TAREA D2 — Verificar pesos
+Cambio: ninguna, solo medir.
+Prueba: reportar peso individual de:
+  - hero-bg-1920.webp (esperado < 200 KB)
+  - hero-bg-1920.jpg (esperado < 350 KB)
+  - p1-ro-800.webp (esperado < 80 KB)
+  - og-image.png (esperado < 300 KB)
+Si alguno excede, bajar calidad WebP a 75 o JPG a 78 y regenerar.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE E — MEJORAS PENDIENTES (no cubiertas en fase previa)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA E1 — Preload del CSS crítico
+Cambio: en <head>, añadir:
+  <link rel="preload" href="css/tailwind.css" as="style">
+Prueba: DevTools → Network → tailwind.css aparece con prioridad "Highest".
+
+TAREA E2 — Preconnect a Formspree
+Cambio: en <head>:
+  <link rel="preconnect" href="https://formspree.io">
+Prueba: DevTools → Network → la conexión a Formspree es más rápida.
+
+TAREA E3 — Sitemap y robots.txt correctos
+Cambio: revisar sitemap.xml:
+  - <loc> con dominio final
+  - <lastmod> con fecha reciente
+  - <changefreq> y <priority> razonables
+Revisar robots.txt:
+  - User-agent: *
+  - Allow: /
+  - Sitemap: https://acquabluecorp.com/sitemap.xml
+Prueba: abrir ambos archivos en dist/ → contenido correcto.
+
+TAREA E4 — Favicon y apple-touch-icon
+Cambio: verificar que existen y pesan < 20 KB:
+  assets/favicon-32.png
+  assets/favicon-192.png
+  assets/apple-touch-icon.png
+  assets/logo.svg
+Prueba: `du -h assets/favicon* assets/apple-touch-icon.png assets/logo.svg`.
+
+TAREA E5 — .htaccess para hosting propio
+Cambio: crear o revisar .htaccess en la raíz con:
+  - RewriteEngine On
+  - Forzar HTTPS
+  - Quitar www o añadir www (según preferencia)
+  - Compresión gzip/brotli (mod_deflate)
+  - Cache-Control para /assets/, /css/, /js/ (1 año)
+  - Bloquear acceso a archivos sensibles (.env, package.json, .git)
+  - ErrorDocument 404 /index.html
+Prueba: subir a un hosting de prueba y verificar con
+  https://www.whatsmydns.net/#http para HTTPS
+  y con PageSpeed Insights para cache.
+
+TAREA E6 — Meta adicionales
+Cambio: en <head>:
+  <meta name="robots" content="index, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="alternate" type="application/rss+xml" title="AcQuaBlue Blog" href="/feed.xml">
+    (solo si tienes feed; si no, omitir)
+Prueba: visualizar el HTML generado en dist/index.html.
+
+TAREA E7 — Structured Data ampliado
+Cambio: ampliar el JSON-LD con:
+  - "geo" con coordenadas de Miami
+  - "openingHoursSpecification" Lun-Vie 08:00-18:00 EST
+  - "sameAs" con LinkedIn si aplica
+  - "hasOfferCatalog" con las 6 categorías de productos
+Prueba: pasar el HTML por https://validator.schema.org → 0 errores.
+
+TAREA E8 — Accesibilidad: contrastes y focus visible
+Cambio: revisar en DevTools → Lighthouse → Accessibility los avisos de
+contraste. Añadir en src/input.css:
+  :focus-visible {
+    outline: 2px solid #22d3ee;
+    outline-offset: 2px;
   }
-Prueba: DevTools → Rendering → emular reduce → no hay animaciones.
+Prueba: tabular por la web → cada elemento enfocado tiene outline visible.
 
-TAREA 5.2 — Estilo .hp-field
-Cambio: añadir en src/input.css:
-  .hp-field { position:absolute; left:-9999px; opacity:0; pointer-events:none; }
-Prueba: los inputs honeypot no son visibles ni clicables.
+TAREA E9 — Copiar al portapapeles del teléfono
+Cambio: en los enlaces tel: y mailto:, verificar que funcionan en móvil.
+Prueba: abrir la web en móvil → tocar el teléfono → abre el marcador.
+
+TAREA E10 — Texto alternativo de todas las imágenes
+Cambio: revisar alt de todas las <img>. Deben ser descriptivos, no
+"imagen" ni "foto". Para decorativas, alt="".
+Prueba: en DevTools → Accessibility → cada imagen tiene alt significativo.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BLOQUE 6 — VERIFICACIÓN FINAL
+BLOQUE F — VERIFICACIÓN FINAL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TAREA 6.1 — Build limpio
-Prueba: `npm run build` → dist/ contiene index.html, css/tailwind.css,
-js/main.js, assets/, robots.txt, sitemap.xml.
-Ningún archivo debe estar vacío.
+TAREA F1 — Build limpio final
+Prueba: `npm run build` → dist/ contiene:
+  index.html, css/tailwind.css, js/main.js, assets/ (con img/), robots.txt,
+  sitemap.xml, og-image.png
+0 archivos vacíos.
 
-TAREA 6.2 — Servir dist localmente y revisar consola
-Prueba: `npx serve dist` y abrir la URL. 0 errores 404 en Network.
-Todos los assets (logo, favicons, css, js) cargan con 200.
-
-TAREA 6.3 — Lighthouse
-Prueba: Lighthouse en modo Mobile:
+TAREA F2 — Lighthouse Mobile y Desktop
+Prueba:
   Performance ≥ 90
   Accessibility ≥ 95
   Best Practices ≥ 95
   SEO = 100
-Si algo baja → identificar y corregir antes de cerrar el loop.
+Reportar puntuaciones exactas.
 
-TAREA 6.4 — Checklist funcional manual
-Marcar cada uno ✅/❌:
-  [ ] Chat abre, envía, responde
+TAREA F3 — Checklist funcional manual
+  [ ] Chat abre, envía, responde en EN y ES
   [ ] Modales abren/cierran con ESC
   [ ] Idioma cambia y persiste al recargar
-  [ ] Contadores animan al hacer scroll
-  [ ] Acordeón abre/cierra con aria-expanded correcto
+  [ ] Contadores animan
+  [ ] Acordeón abre/cierra
   [ ] Tabs filtran productos
-  [ ] Formulario de contacto envía a Formspree
-  [ ] Formulario del modal envía a Formspree
-  [ ] Honeypot bloquea bots
-  [ ] WhatsApp abre con mensaje pre-cargado
-  [ ] Botón "back to top" aparece tras 400px de scroll
+  [ ] Formulario de contacto envía
+  [ ] Formulario del modal envía
+  [ ] Honeypot bloquea
+  [ ] WhatsApp abre
+  [ ] Back to top aparece
+  [ ] Hero carga desde /assets/img/
+  [ ] Cards cargan desde /assets/img/
+  [ ] 0 requests a Unsplash
+  [ ] 0 errores 404 en Network
 
-TAREA 6.5 — Instrucciones de deploy a hosting propio
-Generar un README-DEPLOY.md con:
-  - Cómo ejecutar npm run build
-  - Qué subir (contenido de dist/) a public_html vía FTP
-  - Cómo verificar en el hosting (navegar, revisar consola)
-  - Qué hacer con .htaccess (subirlo a public_html)
+TAREA F4 — README-DEPLOY.md
+Cambio: generar README-DEPLOY.md con:
+  - Comando de build
+  - Contenido a subir a public_html
+  - Pasos FTP
+  - Verificación post-deploy
+  - Qué hacer con .htaccess
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CRITERIO DE PARADA
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-El loop termina cuando TODAS las tareas estén ✅ y Lighthouse cumpla.
-Si una tarea falla 3 veces → DETENTE y pídeme intervención.
+Loop termina cuando TODAS las tareas estén ✅, Lighthouse cumpla y
+0 requests a Unsplash. Si algo falla 3 veces → DETENTE y pídeme ayuda.
 
-Empieza por la TAREA 1.1 y no avances hasta que pase su prueba.
+Empieza por la TAREA A1.
