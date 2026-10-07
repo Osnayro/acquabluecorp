@@ -1,3 +1,4 @@
+
 {
   "name": "acquablue-corporate-site",
   "version": "1.0.0",
@@ -6,7 +7,8 @@
   "scripts": {
     "build:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --minify",
     "watch:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --watch",
-    "build": "npm run build:css",
+    "build:copy": "node build.js",
+    "build": "npm run build:css && npm run build:copy",
     "generate-assets": "node generate-assets.js"
   },
   "devDependencies": {
