@@ -1,10 +1,17 @@
 
+/**
+ * build.js — AcQuaBlue Corporate Site
+ * Genera la carpeta /dist con todos los archivos listos para publicar.
+ * Ejecutado por: npm run build (via "build:copy")
+ */
+
 const fs = require('fs');
 const path = require('path');
 
 const DIST = 'dist';
 
-// Archivos y carpetas que se publicarán en Netlify
+// Archivos y carpetas que se publican en el hosting
+// Ajusta esta lista si agregas nuevos archivos/carpetas al proyecto
 const ITEMS = [
   'index.html',
   'css',
@@ -14,37 +21,29 @@ const ITEMS = [
   'sitemap.xml',
 ];
 
-// Limpiar dist anterior
+console.log('🏗  AcQuaBlue build — generando ./dist');
+
+// 1. Limpiar dist anterior
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(DIST, { recursive: true });
+console.log('✔ dist/ limpiado');
 
-// Copiar cada item si existe
+// 2. Copiar cada item si existe
+let copied = 0;
+let skipped = 0;
+
 for (const item of ITEMS) {
   if (!fs.existsSync(item)) {
     console.log(`⏭  Omitido (no existe): ${item}`);
+    skipped++;
     continue;
   }
   const dest = path.join(DIST, item);
   fs.cpSync(item, dest, { recursive: true });
   console.log(`✔ Copiado: ${item} → ${dest}`);
+  copied++;
 }
 
-console.log('✅ Build listo en ./dist');
-```
-
-Nota importante: la carpeta src no se copia porque solo contiene el input.css de Tailwind, que no debe publicarse. El CSS final ya queda dentro de css/tailwind.css, que sí se copia.
-
----
-
-📄 2) Actualiza los scripts en tu package.json
-
-Reemplaza el bloque scripts completo por este:
-
-```json
-"scripts": {
-  "build:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --minify",
-  "watch:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --watch",
-  "build:copy": "node build.js",
-  "build": "npm run build:css && npm run build:copy",
-  "generate-assets": "node generate-assets.js"
-},
+console.log('');
+console.log(`✅ Build completo: ${copied} items copiados, ${skipped} omitidos`);
+console.log(`📦 Publish directory: ./${DIST}`);
