@@ -1,0 +1,268 @@
+
+Actúa como un ingeniero frontend senior especializado en sitios corporativos
+estáticos con Tailwind CSS v4, accesibilidad, SEO técnico y despliegue en
+Netlify + hosting propio (cPanel/Apache).
+
+Vas a ejecutar un LOOP de corrección y mejora sobre mi proyecto AcQuaBlue.
+Debes trabajar UNA TAREA POR ITERACIÓN. En cada iteración:
+  1. Explica en 2 líneas qué harás y por qué.
+  2. Aplica el cambio mínimo necesario (no refactorices de más).
+  3. Ejecuta la PRUEBA definida para esa tarea (con comandos si tienes acceso).
+  4. Si la prueba falla → corrige y reintenta. Máximo 3 intentos.
+  5. Si tras 3 intentos falla → DETENTE, reporta el error exacto y pídeme ayuda.
+  6. Si pasa → marca ✅ y avanza a la siguiente tarea.
+  7. Reporta en este formato exacto:
+     "Iteración N/M — Tarea: <nombre> → Cambio: <1-2 líneas> →
+      Archivos: <lista> → Prueba: <cómo se probó> →
+      Resultado: ✅/❌ → Siguiente: <tarea N+1>"
+
+NO avances si la prueba de la tarea actual falla.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTEXTO DEL PROYECTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Nombre: acquablue-corporate-site
+- Stack: HTML estático + Tailwind CSS v4 (compilado) + JS vanilla
+- Build: `npm run build` → ejecuta `build:css` (Tailwind) y `build:copy` (build.js → /dist)
+- Hosting final: cPanel/Apache (public_html)
+- Hosting de pruebas: GitHub Pages (funciona) y Netlify (falla)
+- Estructura raíz:
+  /assets  /css  /js  /src
+  build.js  generate-assets.js  index.html  package.json
+  robots.txt  sitemap.xml  tailwind.config.js  .htaccess
+- Deploy: dist/ debe contener index.html + css/ + js/ + assets/ + robots.txt + sitemap.xml
+- No tengo terminal a mano: prioriza cambios verificables por inspección de archivos.
+  Si necesitas ejecutar algo, hazlo tú y muéstrame el resultado.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE 1 — CONFIGURACIÓN Y BUILD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA 1.1 — package.json sin BOM + scripts de build completos
+Cambio: reemplazar el bloque "scripts" por:
+  "build:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --minify",
+  "watch:css": "node node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/input.css -o ./css/tailwind.css --watch",
+  "build:copy": "node build.js",
+  "build": "npm run build:css && npm run build:copy",
+  "generate-assets": "node generate-assets.js"
+Eliminar el BOM (\uFEFF) al inicio del archivo.
+Prueba: `node -e "console.log(JSON.parse(require('fs').readFileSync('package.json','utf8')).name)"`
+→ debe imprimir "acquablue-corporate-site".
+
+TAREA 1.2 — Crear build.js en la raíz
+Cambio: crear build.js con Node puro que:
+  - borre dist/ si existe,
+  - cree dist/,
+  - copie: index.html, css/, js/, assets/, robots.txt, sitemap.xml,
+  - imprima resumen de copiados/omitidos.
+Prueba: `node build.js` → dist/ debe contener los 6 items.
+Verifica con `ls dist`.
+
+TAREA 1.3 — Crear netlify.toml
+Cambio: crear netlify.toml con:
+  [build]
+    command = "npm run build"
+    publish = "dist"
+  [build.environment]
+    NODE_VERSION = "20"
+  Headers de cache para /assets/*, /css/*, /js/*
+  Headers de seguridad: X-Frame-Options, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy
+  Bloque [[redirects]] SPA comentado (mi web es multipágina, no SPA).
+Prueba: `git check-ignore netlify.toml` no debe devolver nada (no ignorado).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE 2 — BUGS CRÍTICOS DE ENCODING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA 2.1 — Eliminar BOM de TODOS los archivos
+Cambio: revisar package.json, main.js, index.html, build.js, generate-assets.js,
+netlify.toml, tailwind.config.js, src/input.css y eliminar cualquier \uFEFF inicial.
+Prueba: buscar en cada archivo el byte EF BB BF al inicio → no debe haber.
+
+TAREA 2.2 — Corregir encoding corrupto en main.js
+Síntomas actuales en main.js:
+  "â€¢"  → debe ser "•"
+  "Â¿"   → debe ser "¿"
+  "Ã³"   → debe ser "ó"
+  "Ã¡"   → debe ser "á"
+  "Ã©"   → debe ser "é"
+  "Ã­"   → debe ser "í"
+  "Ãº"   → debe ser "ú"
+  "Ã±"   → debe ser "ñ"
+  "ðŸ‘‹" → debe ser "👋"
+  "ðŸ§ª" → debe ser "🧪"
+  "ðŸ’§" → debe ser "💧"
+  "ðŸ“Š" → debe ser "📊"
+  "ðŸ”¬" → debe ser "🔬"
+  "ðŸ”¥" → debe ser "🔥"
+  "ðŸ’”" → debe ser "💰"
+  "ðŸ“ " → debe ser "📍"
+  "ðŸ›¡" → debe ser "🛡"
+  "ðŸš¢" → debe ser "🚢"
+  "ðŸ“©" → debe ser "📩"
+  "ðŸ’¬" → debe ser "💬"
+  "ðŸ’¡" → debe ser "💡"
+  "ðŸ–¥" → debe ser "🖥"
+  "â„¢"  → debe ser "™"
+  "Âµm"  → debe ser "µm"
+  "Â®"   → debe ser "®"
+  "â€"" → debe ser "—"
+Además, guardar main.js como UTF-8 SIN BOM.
+Prueba: buscar "Ã" y "â€" en main.js → 0 resultados.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE 3 — BUGS DE JAVASCRIPT EN main.js
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA 3.1 — localStorage en try/catch
+Cambio: envolver `let currentLang = localStorage.getItem('acquablue_lang') || 'EN';`
+en try/catch con fallback 'EN'.
+Prueba: en DevTools, `Object.defineProperty(window,'localStorage',{get(){throw new Error()}})`
+y recargar → el sitio debe funcionar igual.
+
+TAREA 3.2 — Evitar duplicar listener de keydown al abrir modales
+Cambio: en openModal(), antes de `document.addEventListener('keydown', handleModalKeydown);`
+añadir `document.removeEventListener('keydown', handleModalKeydown);`
+Prueba: abrir/cerrar un modal 5 veces; el listener debe existir solo 1 vez.
+
+TAREA 3.3 — Evitar disparar dispatchLeadEmail múltiples veces
+Cambio: en generateGroundedAIResponse, cuando se detecte email/teléfono,
+solo llamar a dispatchLeadEmail si `chatState.stage !== 'CONFIRMED'`.
+Prueba: enviar 3 mensajes con email → 1 sola llamada a Formspree en Network.
+
+TAREA 3.4 — Limitar chatState.history a 50 entradas
+Cambio: en appendChatMessage, tras push, si history.length > 50 hacer shift().
+Prueba: 60 mensajes → history.length === 50.
+
+TAREA 3.5 — Fallback en contadores
+Cambio: `const target = parseFloat(el.dataset.target || 0);` en TODOS los usos.
+Prueba: quitar data-target a un contador → no debe mostrar NaN.
+
+TAREA 3.6 — i18n del botón "Sending..." en formularios
+Cambio: en los finally de handleFormSubmit y handleModalForm reemplazar
+`|| 'Send'` por `|| i18n[currentLang]['form.btnSend']`.
+Prueba: en ES, simular error de red → el botón vuelve al texto en español.
+
+TAREA 3.7 — aria-label del input del chat según idioma
+Cambio: en switchLanguage, actualizar aria-label del #chat-input:
+  EN → "Message for AI Assistant"
+  ES → "Mensaje para el Asistente IA"
+Prueba: cambiar idioma → aria-label cambia.
+
+TAREA 3.8 — i18n del placeholder del chat
+Cambio: añadir clave "chat.placeholder" en EN y ES al diccionario i18n
+y aplicarla al input en switchLanguage y en la carga inicial.
+Prueba: cambiar idioma → el placeholder cambia.
+
+TAREA 3.9 — rel="noopener noreferrer" en todos los target="_blank"
+Cambio: grep target="_blank" en index.html y main.js, añadir noreferrer
+donde falte.
+Prueba: todos los target="_blank" tienen rel con noopener y noreferrer.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE 4 — MEJORAS EN index.html
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA 4.1 — Honeypot anti-spam en los 2 formularios
+Cambio: en el form de contacto (#contact-form) y en el del modal de cotización,
+añadir input oculto:
+  <input type="text" name="website" tabindex="-1" autocomplete="off"
+         class="hp-field" aria-hidden="true">
+Añadir en src/input.css (o en un <style>):
+  .hp-field { position:absolute; left:-9999px; opacity:0; pointer-events:none; }
+En main.js, al inicio de handleFormSubmit y handleModalForm:
+  const hp = form.querySelector('[name="website"]');
+  if (hp && hp.value) { return; }
+Prueba: rellenar honeypot manualmente → el envío se bloquea.
+
+TAREA 4.2 — Migrar onclick inline a data-* + addEventListener
+Cambio: reemplazar onclick="openModal('quoteModal')" por
+data-open-modal="quoteModal" y añadir listener en main.js.
+Ídem para onsubmit, onclick="toggleAccordion(...)", etc.
+Prueba: cada botón abre su modal igual que antes. 0 onclick en index.html.
+
+TAREA 4.3 — Añadir defer a <script src="js/main.js">
+Cambio: <script src="js/main.js" defer></script>
+Prueba: el sitio funciona igual; Lighthouse Performance no baja.
+
+TAREA 4.4 — Disclaimer de marcas registradas en el footer
+Cambio: añadir en el footer, antes del cierre:
+  <p class="text-xs text-slate-500 mt-4">
+    All trademarks (DuPont™, Pentair™, Atlantic UV®, Aquafine®, Goulds®,
+    Milton Roy®, Allen-Bradley®, Rockwell, Hach®, NSF®) are property of
+    their respective owners and are used for identification purposes only.
+  </p>
+Prueba: buscar "trademarks" en dist/index.html → aparece 1 vez.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE 5 — CSS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA 5.1 — prefers-reduced-motion en src/input.css
+Cambio: añadir al final de src/input.css:
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-reveal, .animate-fade-in, .animate-pulse, .animate-ping,
+    .animate-bounce {
+      opacity: 1 !important;
+      transform: none !important;
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+Prueba: DevTools → Rendering → emular reduce → no hay animaciones.
+
+TAREA 5.2 — Estilo .hp-field
+Cambio: añadir en src/input.css:
+  .hp-field { position:absolute; left:-9999px; opacity:0; pointer-events:none; }
+Prueba: los inputs honeypot no son visibles ni clicables.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOQUE 6 — VERIFICACIÓN FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREA 6.1 — Build limpio
+Prueba: `npm run build` → dist/ contiene index.html, css/tailwind.css,
+js/main.js, assets/, robots.txt, sitemap.xml.
+Ningún archivo debe estar vacío.
+
+TAREA 6.2 — Servir dist localmente y revisar consola
+Prueba: `npx serve dist` y abrir la URL. 0 errores 404 en Network.
+Todos los assets (logo, favicons, css, js) cargan con 200.
+
+TAREA 6.3 — Lighthouse
+Prueba: Lighthouse en modo Mobile:
+  Performance ≥ 90
+  Accessibility ≥ 95
+  Best Practices ≥ 95
+  SEO = 100
+Si algo baja → identificar y corregir antes de cerrar el loop.
+
+TAREA 6.4 — Checklist funcional manual
+Marcar cada uno ✅/❌:
+  [ ] Chat abre, envía, responde
+  [ ] Modales abren/cierran con ESC
+  [ ] Idioma cambia y persiste al recargar
+  [ ] Contadores animan al hacer scroll
+  [ ] Acordeón abre/cierra con aria-expanded correcto
+  [ ] Tabs filtran productos
+  [ ] Formulario de contacto envía a Formspree
+  [ ] Formulario del modal envía a Formspree
+  [ ] Honeypot bloquea bots
+  [ ] WhatsApp abre con mensaje pre-cargado
+  [ ] Botón "back to top" aparece tras 400px de scroll
+
+TAREA 6.5 — Instrucciones de deploy a hosting propio
+Generar un README-DEPLOY.md con:
+  - Cómo ejecutar npm run build
+  - Qué subir (contenido de dist/) a public_html vía FTP
+  - Cómo verificar en el hosting (navegar, revisar consola)
+  - Qué hacer con .htaccess (subirlo a public_html)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITERIO DE PARADA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+El loop termina cuando TODAS las tareas estén ✅ y Lighthouse cumpla.
+Si una tarea falla 3 veces → DETENTE y pídeme intervención.
+
+Empieza por la TAREA 1.1 y no avances hasta que pase su prueba.
